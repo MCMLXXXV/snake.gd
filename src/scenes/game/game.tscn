@@ -57,7 +57,9 @@ theme_type_variation = &"FramePanelContainer"
 
 [node name="WorldContainer" type="SubViewportContainer" parent="Contents/Frame"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 224)
 layout_mode = 2
+stretch = true
 
 [node name="World" type="SubViewport" parent="Contents/Frame/WorldContainer"]
 disable_3d = true

@@ -13,22 +13,22 @@ var score: int = 0:
 		score = value
 		high_score = maxi(score, high_score)
 
-## This game's highest score recorded.
+## This game's highest recorded score.
 @onready
 var high_score: int = load_high_score()
 
 
-## Restores the high store value from the settings file.
+## Restores the high score value from the game data file.
 func load_high_score() -> int:
 	var data = Data.load_json(HIGH_SCORE_PATH)
 	if data is Dictionary:
 		var value = data.get("high_score")
-		if value is float: # NOTE: JSON numbers are always `float`.
+		if value is float:  # NOTE: JSON numbers are always `float`.
 			return int(value)
 	return DEFAULT_HIGH_SCORE
 
 
-## Stores the high score value in the settings file.
+## Stores the high score value in the game data file.
 func save_high_score() -> void:
 	if high_score == score:
 		Data.save_json(HIGH_SCORE_PATH, {high_score = high_score})

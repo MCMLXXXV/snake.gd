@@ -52,72 +52,23 @@ var is_paused: bool = false:
 		$Timer.paused = value
 
 ## This grid's randomizer.
-var rng := RandomNumberGenerator.new()
+var _rng := RandomNumberGenerator.new()
 
 ## The list of all available cell coordinates on the grid.
 @onready
-var grid_cells: Array[Vector2i] = get_cell_coordinates_list(grid_width, grid_height)
+var _grid_cells: Array[Vector2i] = _get_cell_coordinates_list()
 
 
 func _ready() -> void:
-	rng.randomize()
-	reset_snake()
-	reset_food()
-
-
-## Build an array of grid cells to be queried later.
-func get_cell_coordinates_list(width: int, height: int) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for y in height:
-		for x in width:
-			result.push_back(Vector2i(x, y))
-	return result
-
-
-## Returns the list of remaining cells on the grid.
-func get_free_cells(snake_cells: Array[Vector2i]) -> Array[Vector2i]:
-	return grid_cells.filter(func(cell): return not cell in snake_cells)
-
-
-## Get a random direction to face the snake head at the start of the game.
-func get_random_direction() -> Vector2i:
-	match rng.randi() % 4:
-		0:
-			return Vector2i.UP
-		1:
-			return Vector2i.RIGHT
-		2:
-			return Vector2i.DOWN
-		3, _:
-			return Vector2i.LEFT
-
-
-## Get a random coordinate inside the grid, with a given distance from the
-## border, where the snake head should spawn at the start of the game.
-func get_random_spawn_cell(margin: int = 0) -> Vector2i:
-	var x := rng.randi_range(margin, grid_width - margin - 1)
-	var y := rng.randi_range(margin, grid_height - margin - 1)
-	return Vector2i(x, y)
+	_rng.randomize()
+	_reset_snake()
+	_reset_food()
 
 
 ## Increases game difficulty, making the snake move faster.
 func increase_pace() -> void:
 	if $Timer.wait_time > 0.08:
 		$Timer.wait_time -= 0.02
-
-
-## Places the food on a free grid cell.
-func reset_food() -> void:
-	var free_cells := get_free_cells($Snake.get_occupied_cells())
-	if free_cells.is_empty():
-		game_over.emit()
-	else:
-		$Food.cell = free_cells[rng.randi_range(0, len(free_cells) - 1)]
-
-
-## Initializes the snake on the grid.
-func reset_snake() -> void:
-	$Snake.initialize(initial_snake_size, get_random_spawn_cell(spawn_margin), get_random_direction())
 
 
 ## Makes the snake turn left the next step.
@@ -145,7 +96,57 @@ func step() -> void:
 		game_over.emit()
 	elif $Food.cell == cell:
 		$Snake.add_segment(cell)
-		reset_food()
+		_reset_food()
 		food_eaten.emit()
 	else:
 		$Snake.walk(cell)
+
+
+## Builds an array of grid cells to be queried later.
+func _get_cell_coordinates_list() -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for i in grid_width * grid_height:
+		@warning_ignore("integer_division")
+		result.push_back(Vector2i(i % grid_width, i / grid_width))
+	return result
+
+
+## Returns the list of remaining cells on the grid.
+func _get_free_cells(snake_cells: Array[Vector2i]) -> Array[Vector2i]:
+	return _grid_cells.filter(func(cell): return not cell in snake_cells)
+
+
+## Gets a random direction to face the snake head at the start of the game.
+func _get_random_direction() -> Vector2i:
+	var r := _rng.randf()
+	if r > 0.75:
+		return Vector2i.UP
+	elif r > 0.5:
+		return Vector2i.RIGHT
+	elif r > 0.25:
+		return Vector2i.DOWN
+	else:
+		return Vector2i.LEFT
+
+
+## Chooses a random cell inside the grid, with a given distance from the grid's
+## edge, where the snake head should appear at the start of the game.
+func _get_random_spawn_cell(margin: int = 0) -> Vector2i:
+	var x := _rng.randi_range(margin, grid_width - margin - 1)
+	var y := _rng.randi_range(margin, grid_height - margin - 1)
+	return Vector2i(x, y)
+
+
+## Chooses a random vacant cell on the grid to place a new piece of food, or
+## emits [signal game_over] if none is available.
+func _reset_food() -> void:
+	var free_cells := _get_free_cells($Snake.get_occupied_cells())
+	if free_cells.is_empty():
+		game_over.emit()
+	else:
+		$Food.cell = free_cells[_rng.randi_range(0, len(free_cells) - 1)]
+
+
+## Initializes the snake on the grid.
+func _reset_snake() -> void:
+	$Snake.initialize(initial_snake_size, _get_random_spawn_cell(spawn_margin), _get_random_direction())
